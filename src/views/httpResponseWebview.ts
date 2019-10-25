@@ -41,6 +41,7 @@ export class HttpResponseWebview extends BaseWebview {
         this.panelResponses = new Map<WebviewPanel, HttpResponse>();
         this.iconFilePath = Uri.file(path.join(this.extensionPath, Constants.ImagesFolderName, Constants.IconFileName));
 
+        // this.context.subscriptions.push(commands.registerCommand('rest-client.save-response', () => this.saveResponseBody()));
         this.context.subscriptions.push(commands.registerCommand('rest-client.fold-response', () => this.foldResponseBody()));
         this.context.subscriptions.push(commands.registerCommand('rest-client.unfold-response', () => this.unfoldResponseBody()));
     }

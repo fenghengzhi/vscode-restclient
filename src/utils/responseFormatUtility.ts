@@ -1,6 +1,7 @@
 'use strict';
 
 import { createScanner, SyntaxKind } from 'jsonc-parser';
+import moment from 'moment';
 import * as os from 'os';
 import { window } from 'vscode';
 import { MimeUtility } from './mimeUtility';
@@ -44,10 +45,10 @@ export class ResponseFormatUtility {
         return body;
     }
 
-    private static jsonPrettify(text: string, indentSize = 2) {
+    private static jsonPrettify(text: string, indentSize = 2, _indentLevel = 0) {
         const scanner = createScanner(text, true);
 
-        let indentLevel = 0;
+        let indentLevel = _indentLevel;
 
         function newLineAndIndent() {
             return os.EOL + ' '.repeat(indentLevel * indentSize);
@@ -108,6 +109,16 @@ export class ResponseFormatUtility {
                     result += ResponseFormatUtility.jsonSpecialTokenMapping[firstToken] + ' ';
                     break;
                 case SyntaxKind.StringLiteral:
+                    if (/^"\/Date\(.*\)\/"$/.test(firstTokenValue)) {
+                        // console.log('firstTokenValue',firstTokenValue)
+                        firstTokenValue = moment(JSON.parse(firstTokenValue)).format('\"YYYY-MM-DD HH:mm:ss\"');
+                    } else if (/^"{.*}"$/.test(firstTokenValue) || /^"\[.*]"$/.test(firstTokenValue)) {
+                        try {
+                            firstTokenValue = `"${ResponseFormatUtility.jsonPrettify(JSON.parse(firstTokenValue), indentSize, indentLevel)}"`;
+                        } catch {
+                        }
+                        // console.log(firstTokenValue);
+                    }
                 case SyntaxKind.NumericLiteral:
                 case SyntaxKind.Unknown:
                     result += firstTokenValue;

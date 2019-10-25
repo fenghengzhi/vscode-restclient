@@ -5,6 +5,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { Clipboard, env, Uri, window, workspace } from 'vscode';
 import * as Constants from '../common/constants';
+import {HttpRequest} from "../models/httpRequest";
 import { HttpResponse } from '../models/httpResponse';
 import { trace } from "../utils/decorator";
 import { MimeUtility } from '../utils/mimeUtility';
@@ -34,6 +35,33 @@ export class ResponseController {
                     const filePath = uri.fsPath;
                     await PersistUtility.ensureFileAsync(filePath);
                     await fs.writeFile(filePath, fullResponse);
+                    const btn = await window.showInformationMessage(`Saved to ${filePath}`, { title: 'Open' }, { title: 'Copy Path' });
+                    if (btn) {
+                        if (btn.title === 'Open') {
+                            workspace.openTextDocument(filePath).then(window.showTextDocument);
+                        } else if (btn.title === 'Copy Path') {
+                            await this.clipboard.writeText(filePath);
+                        }
+                    }
+                }
+            } catch {
+                window.showErrorMessage('Failed to save latest response to disk.');
+            }
+        }
+    }
+    @trace('Request-And-Response-Save')
+    public async allSave() {
+        const response = HttpResponseWebview.activePreviewResponse;
+        if (response) {
+            const fullResponse = this.getFullResponseString(response);
+            const fullRequest = this.getFullRequestString(response.request, response.httpVersion);
+            const defaultFilePath = path.join(ResponseController.responseSaveFolderPath, `Response-${Date.now()}.http`);
+            try {
+                const uri = await window.showSaveDialog({ defaultUri: Uri.file(defaultFilePath) });
+                if (uri) {
+                    const filePath = uri.fsPath;
+                    await PersistUtility.ensureFileAsync(filePath);
+                    await fs.writeFile(filePath, fullRequest + os.EOL + os.EOL + fullResponse);
                     const btn = await window.showInformationMessage(`Saved to ${filePath}`, { title: 'Open' }, { title: 'Copy Path' });
                     if (btn) {
                         if (btn.title === 'Open') {
@@ -99,6 +127,21 @@ export class ResponseController {
         let body = '';
         if (response.body) {
             body = `${os.EOL}${response.body}`;
+        }
+        return `${statusLine}${headerString}${body}`;
+    }
+
+    private getFullRequestString(request: HttpRequest, httpVersion: string): string {
+        const statusLine = `${request.method} ${request.url} HTTP/${httpVersion}${os.EOL}`;
+        let headerString = '';
+        for (const header in request.headers) {
+            if (request.headers.hasOwnProperty(header)) {
+                headerString += `${header}: ${request.headers[header]}${os.EOL}`;
+            }
+        }
+        let body = '';
+        if (request.body) {
+            body = `${os.EOL}${request.body}`;
         }
         return `${statusLine}${headerString}${body}`;
     }

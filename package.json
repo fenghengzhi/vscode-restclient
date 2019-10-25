@@ -2,7 +2,7 @@
   "name": "rest-client",
   "displayName": "REST Client",
   "description": "REST Client for Visual Studio Code",
-  "version": "0.22.2",
+  "version": "0.22.4",
   "publisher": "humao",
   "author": {
     "name": "Huachao Mao",
@@ -42,6 +42,7 @@
     "onCommand:rest-client.request",
     "onCommand:rest-client.history",
     "onCommand:rest-client.clear-history",
+    "onCommand:rest-client.save-request-and-response",
     "onCommand:rest-client.save-response",
     "onCommand:rest-client.save-response-body",
     "onCommand:rest-client.copy-response-body",
@@ -109,6 +110,15 @@
       {
         "command": "rest-client.clear-history",
         "title": "Clear Request History",
+        "category": "Rest Client"
+      },
+      {
+        "command": "rest-client.save-request-and-response",
+        "title": "Save Request And Response",
+        "icon": {
+          "light": "./images/save.svg",
+          "dark": "./images/save-inverse.svg"
+        },
         "category": "Rest Client"
       },
       {
@@ -201,6 +211,11 @@
         }
       ],
       "editor/title": [
+        {
+          "when": "httpResponsePreviewFocus",
+          "command": "rest-client.save-request-and-response",
+          "group": "navigation@0"
+        },
         {
           "when": "httpResponsePreviewFocus",
           "command": "rest-client.save-response",

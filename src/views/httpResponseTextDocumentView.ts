@@ -25,7 +25,7 @@ export class HttpResponseTextDocumentView {
     }
 
     public async render(response: HttpResponse, column?: ViewColumn) {
-        const content = this.getTextDocumentContent(response);
+        const content = await this.getTextDocumentContent(response);
         const language = this.getVSCodeDocumentLanguageId(response);
         let document: TextDocument;
         if (this.settings.showResponseInDifferentTab || this.documents.length === 0) {
@@ -44,7 +44,7 @@ export class HttpResponseTextDocumentView {
         }
     }
 
-    private getTextDocumentContent(response: HttpResponse): string {
+    private async getTextDocumentContent(response: HttpResponse): string {
         let content = '';
         const previewOption = this.settings.previewOption;
         if (previewOption === PreviewOption.Exchange) {
@@ -56,7 +56,7 @@ export class HttpResponseTextDocumentView {
                 if (typeof request.body !== 'string') {
                     request.body = 'NOTE: Request Body From Is File Not Shown';
                 }
-                content += `${EOL}${ResponseFormatUtility.formatBody(request.body.toString(), request.contentType, true)}${EOL}`;
+                content += `${EOL}${await ResponseFormatUtility.formatBody(request.body.toString(), request.contentType, true)}${EOL}`;
             }
 
             content += EOL.repeat(2);
@@ -69,7 +69,7 @@ export class HttpResponseTextDocumentView {
 
         if (previewOption !== PreviewOption.Headers) {
             const prefix = previewOption === PreviewOption.Body ? '' : EOL;
-            content += `${prefix}${ResponseFormatUtility.formatBody(response.body, response.contentType, true)}`;
+            content += `${prefix}${await ResponseFormatUtility.formatBody(response.body, response.contentType, true)}`;
         }
 
         return content;

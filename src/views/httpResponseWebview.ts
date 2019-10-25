@@ -93,7 +93,7 @@ export class HttpResponseWebview extends BaseWebview {
             panel.title = `${tabTitle}(${response.elapsedMillionSeconds}ms)`;
         }
 
-        panel.webview.html = this.getHtmlForWebview(panel, response);
+        panel.webview.html = await this.getHtmlForWebview(panel, response);
 
         commands.executeCommand('setContext', this.httpResponsePreviewActiveContextKey, this.settings.previewResponsePanelTakeFocus);
 
@@ -122,7 +122,7 @@ export class HttpResponseWebview extends BaseWebview {
         }
     }
 
-    private getHtmlForWebview(panel: WebviewPanel, response: HttpResponse): string {
+    private async getHtmlForWebview(panel: WebviewPanel, response: HttpResponse): Promise<string> {
         let innerHtml: string;
         let width = 2;
         let contentType = response.contentType;
@@ -132,7 +132,7 @@ export class HttpResponseWebview extends BaseWebview {
         if (contentType && MimeUtility.isBrowserSupportedImageFormat(contentType) && !HttpResponseWebview.isHeadRequest(response)) {
             innerHtml = `<img src="data:${contentType};base64,${response.bodyBuffer.toString('base64')}">`;
         } else {
-            const code = this.highlightResponse(response);
+            const code = await this.highlightResponse(response);
             width = (code.split(/\r\n|\r|\n/).length + 1).toString().length;
             innerHtml = `<pre><code>${this.addLineNums(code)}</code></pre>`;
         }
@@ -163,7 +163,7 @@ export class HttpResponseWebview extends BaseWebview {
     </body>`;
     }
 
-    private highlightResponse(response: HttpResponse): string {
+    private async highlightResponse(response: HttpResponse): Promise<string> {
         let code = '';
         const previewOption = this.settings.previewOption;
         if (previewOption === PreviewOption.Exchange) {
@@ -176,7 +176,7 @@ ${HttpResponseWebview.formatHeaders(request.headers)}`;
                 if (typeof request.body !== 'string') {
                     request.body = 'NOTE: Request Body From File Is Not Shown';
                 }
-                const requestBodyPart = `${ResponseFormatUtility.formatBody(request.body, request.contentType, true)}`;
+                const requestBodyPart = `${await ResponseFormatUtility.formatBody(request.body, request.contentType, true)}`;
                 const bodyLanguageAlias = HttpResponseWebview.getHighlightLanguageAlias(request.contentType, request.body);
                 if (bodyLanguageAlias) {
                     code += hljs.highlight(bodyLanguageAlias, requestBodyPart).value;
@@ -196,7 +196,7 @@ ${HttpResponseWebview.formatHeaders(response.headers)}`;
         }
 
         if (previewOption !== PreviewOption.Headers) {
-            const responseBodyPart = `${ResponseFormatUtility.formatBody(response.body, response.contentType, this.settings.suppressResponseBodyContentTypeValidationWarning)}`;
+            const responseBodyPart = `${await ResponseFormatUtility.formatBody(response.body, response.contentType, this.settings.suppressResponseBodyContentTypeValidationWarning)}`;
             if (this.settings.disableHighlightResonseBodyForLargeResponse &&
                 response.bodySizeInBytes > this.settings.largeResponseBodySizeLimitInMB * 1024 * 1024) {
                 code += responseBodyPart;

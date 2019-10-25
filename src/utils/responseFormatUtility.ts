@@ -4,6 +4,7 @@ import { createScanner, SyntaxKind } from 'jsonc-parser';
 import moment from 'moment';
 import * as os from 'os';
 import { window } from 'vscode';
+import {EnvironmentVariableProvider} from "./httpVariableProviders/environmentVariableProvider";
 import { MimeUtility } from './mimeUtility';
 import { isJSONString } from './misc';
 const pd = require('pretty-data').pd;
@@ -22,11 +23,11 @@ export class ResponseFormatUtility {
         [SyntaxKind.FalseKeyword]: 'false'
     };
 
-    public static formatBody(body: string, contentType: string | undefined, suppressValidation: boolean): string {
+    public static async formatBody(body: string, contentType: string | undefined, suppressValidation: boolean): Promise<string> {
         if (contentType) {
             if (MimeUtility.isJSON(contentType)) {
                 if (isJSONString(body)) {
-                    body = ResponseFormatUtility.jsonPrettify(body);
+                    body = await ResponseFormatUtility.jsonPrettify(body);
                 } else if (!suppressValidation) {
                     window.showWarningMessage('The content type of response is application/json, while response body is not a valid json string');
                 }
@@ -37,7 +38,7 @@ export class ResponseFormatUtility {
             } else {
                 // Add this for the case that the content type of response body is not very accurate #239
                 if (isJSONString(body)) {
-                    body = ResponseFormatUtility.jsonPrettify(body);
+                    body = await ResponseFormatUtility.jsonPrettify(body);
                 }
             }
         }
@@ -45,7 +46,7 @@ export class ResponseFormatUtility {
         return body;
     }
 
-    private static jsonPrettify(text: string, indentSize = 2, _indentLevel = 0) {
+    private static async jsonPrettify(text: string, indentSize = 2, _indentLevel = 0) {
         const scanner = createScanner(text, true);
 
         let indentLevel = _indentLevel;
@@ -111,10 +112,20 @@ export class ResponseFormatUtility {
                 case SyntaxKind.StringLiteral:
                     if (/^"\/Date\(.*\)\/"$/.test(firstTokenValue)) {
                         // console.log('firstTokenValue',firstTokenValue)
-                        firstTokenValue = moment(JSON.parse(firstTokenValue)).format('\"YYYY-MM-DD HH:mm:ss\"');
+                        // const timeZone = {value: '+8'};
+                        const timeZone = await EnvironmentVariableProvider.Instance.get('timeZone');
+                        // tslint:disable-next-line:no-console
+                        // const responseTimeZone = firstTokenValue.replace(/^"\/Date\(.*\)\/"$/, '$1');
+                        // const responseTimeZone = firstTokenValue.slice(-8, -3);
+                        // console.log('timeZone', timeZone.value);
+                        if (timeZone.value) {
+                            firstTokenValue = moment(JSON.parse(firstTokenValue)).utcOffset((timeZone.value as string)).format('\"YYYY-MM-DD HH:mm:ss\"');
+                        } else {
+                            firstTokenValue = moment(JSON.parse(firstTokenValue)).format('\"YYYY-MM-DD HH:mm:ss\"');
+                        }
                     } else if (/^"{.*}"$/.test(firstTokenValue) || /^"\[.*]"$/.test(firstTokenValue)) {
                         try {
-                            firstTokenValue = `"${ResponseFormatUtility.jsonPrettify(JSON.parse(firstTokenValue), indentSize, indentLevel)}"`;
+                            firstTokenValue = `"${await ResponseFormatUtility.jsonPrettify(JSON.parse(firstTokenValue), indentSize, indentLevel)}"`;
                         } catch {
                         }
                         // console.log(firstTokenValue);

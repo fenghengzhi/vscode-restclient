@@ -116,8 +116,8 @@
         "command": "rest-client.save-request-and-response",
         "title": "Save Request And Response",
         "icon": {
-          "light": "./images/save.svg",
-          "dark": "./images/save-inverse.svg"
+          "light": "./images/save1.svg",
+          "dark": "./images/save-inverse1.svg"
         },
         "category": "Rest Client"
       },

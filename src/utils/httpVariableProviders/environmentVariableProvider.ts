@@ -39,6 +39,25 @@ export class EnvironmentVariableProvider implements HttpVariableProvider {
         return { name, value: variables[name] };
     }
 
+    public getSync(name: string): HttpVariable {
+        let result: HttpVariable;
+        let done = false;
+        (async function () {
+            try {
+                const variables = await this.getAvailableVariables();
+                if (!(name in variables)) {
+                    result = {name, error: ResolveErrorMessage.EnvironmentVariableNotExist};
+                }
+            } finally {
+                done = true;
+            }
+        })();
+        while (!done) {
+        }
+        // @ts-ignore
+        return result;
+    }
+
     public async getAll(): Promise<HttpVariable[]> {
         const variables = await this.getAvailableVariables();
         return Object.keys(variables).map(key => ({ name: key, value: variables[key]}));
